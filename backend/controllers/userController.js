@@ -84,3 +84,27 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 }; 
+
+// Đổi mật khẩu (user tự đổi)
+exports.changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ error: 'Thiếu thông tin mật khẩu' });
+    }
+    const userId = req.user && req.user.userId ? req.user.userId : null;
+    if (!userId) return res.status(401).json({ error: 'Không xác thực' });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) return res.status(400).json({ error: 'Mật khẩu cũ không đúng' });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    res.json({ message: 'Đổi mật khẩu thành công' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
