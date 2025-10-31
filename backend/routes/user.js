@@ -3,7 +3,8 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const auth = require('../middlewares/auth');
 
-router.post('/register', userController.register);
+// Allow public register, but if authenticated, middleware attaches req.user so we can log the actor
+router.post('/register', (req, res, next) => next(), userController.register);
 router.post('/login', userController.login);
 router.get('/', auth(), userController.getUsers);
 router.post('/change-password', auth(), userController.changePassword);

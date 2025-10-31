@@ -14,6 +14,7 @@ app.use('/api/stages', require('./routes/stage'));
 app.use('/api/tasks', require('./routes/task'));
 app.use('/api/payments', require('./routes/payment'));
 app.use('/api/users', require('./routes/user'));
+app.use('/api/logs', require('./routes/log'));
 const fileRoutes = require('./routes/file');
 app.use('/api/files', fileRoutes);
 

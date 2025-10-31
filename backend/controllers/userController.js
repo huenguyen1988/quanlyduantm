@@ -1,6 +1,7 @@
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const Log = require('../models/log');
 
 // Đăng ký
 exports.register = async (req, res) => {
@@ -12,6 +13,19 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ name, email, password: hashedPassword, role });
     await user.save();
+    // Log if has actor (admin creating user)
+    if (req.user) {
+      await Log.create({
+        action: 'create',
+        module: 'user',
+        actorId: req.user.userId,
+        actorName: req.user.name || '',
+        targetId: user._id,
+        targetName: user.name,
+        targetEmail: user.email,
+        details: { role }
+      });
+    }
     res.status(201).json({ message: 'Đăng ký thành công' });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -68,6 +82,19 @@ exports.updateUser = async (req, res) => {
     if (role) user.role = role;
     
     await user.save();
+    // Log update
+    if (req.user) {
+      await Log.create({
+        action: 'update',
+        module: 'user',
+        actorId: req.user.userId,
+        actorName: req.user.name || '',
+        targetId: user._id,
+        targetName: user.name,
+        targetEmail: user.email,
+        details: { name: !!name, email: !!email, role: !!role }
+      });
+    }
     res.json({ message: 'Cập nhật thành công' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -79,6 +106,17 @@ exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) return res.status(404).json({ error: 'Not found' });
+    if (req.user) {
+      await Log.create({
+        action: 'delete',
+        module: 'user',
+        actorId: req.user.userId,
+        actorName: req.user.name || '',
+        targetId: user._id,
+        targetName: user.name,
+        targetEmail: user.email
+      });
+    }
     res.json({ message: 'Deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
